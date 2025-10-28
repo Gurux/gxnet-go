@@ -1,4 +1,4 @@
-github.com/Gurux/gxcommon-go v1.0.1 h1:nKBSWvuzjdZAet3S7UD0gTJdF9Q7o98j6vfR+lFpyyQ=
-github.com/Gurux/gxcommon-go v1.0.1/go.mod h1:akXUJHT6wafxB3bdE5ZsTq72OYtDaRZXVpN7ivqorI0=
-github.com/Gurux/gxnet-go v1.0.1 h1:DPcb/DQuRG4ghAHotA07R4avIoDCymAbsK9TiXlzh0A=
-github.com/Gurux/gxnet-go v1.0.1/go.mod h1:DGQMmb6yWMb75ju8XormpKJMn+sL/iOPjmV9D2sRPiA=
+github.com/Gurux/gxcommon-go v1.0.4 h1:HtZ/ZT1iGt3BsAJLCZiIu1mrB3Rrl7FUjM2RoW7xKoc=
+github.com/Gurux/gxcommon-go v1.0.4/go.mod h1:UACtU50hz0GYDQcC0ovd2mC3C5g4jH8nKrkS/DrIYeU=
+golang.org/x/text v0.30.0 h1:yznKA/E9zq54KzlzBEAWn1NXSQ8DIp/NYMy88xJjl4k=
+golang.org/x/text v0.30.0/go.mod h1:yDdHFIX9t+tORqspjENWgzaCVXgk0yYnYuSZ8UzzBVM=

@@ -4,9 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/Gurux/gxcommon-go"
 	"github.com/Gurux/gxnet-go"
+	"golang.org/x/text/language"
 )
 
 var (
@@ -15,7 +17,21 @@ var (
 	message = flag.String("m", "", "Send message")
 	t       = flag.String("t", "", "Trace level.")
 	w       = flag.Int("w", 1000, "WaitTime in milliseconds.")
+	lang    = flag.String("lang", "", "Used language.")
 )
+
+func CurrentLanguage() language.Tag {
+	langEnv := os.Getenv("LANG")
+	if langEnv == "" {
+		return language.AmericanEnglish
+	}
+	langEnv = strings.Split(langEnv, ".")[0]
+	tag, err := language.Parse(langEnv)
+	if err != nil {
+		return language.AmericanEnglish
+	}
+	return tag
+}
 
 func main() {
 	flag.Parse()
@@ -25,6 +41,15 @@ func main() {
 	}
 
 	media := gxnet.NewGXNet(gxnet.NetworkTypeTCP, *host, *port)
+	if *lang != "" {
+		tag, err := language.Parse(*lang)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "error parsing language:", err)
+			return
+		}
+		media.Localize(tag)
+	}
+
 	media.SetOnError(func(m gxcommon.IGXMedia, err error) {
 		// log/handle error
 		fmt.Fprintln(os.Stderr, "error:", err)
