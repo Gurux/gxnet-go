@@ -47,6 +47,8 @@ import (
 	"time"
 
 	"github.com/Gurux/gxcommon-go"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 )
 
 // GXNet holds connection configuration and tracing settings for a network media.
@@ -89,12 +91,16 @@ type GXNet struct {
 	//Sync settings.
 	receivedSize int
 	received     synchronousMediaBase
+
+	// Printer for localized messages.
+	p *message.Printer
 }
 
 // NewGXNet creates a GXNet configured with the given protocol, host, and port.
 // It also initializes the internal stop channel used to signal shutdown.
 func NewGXNet(protocol NetworkType, hostName string, port int) *GXNet {
 	g := &GXNet{Protocol: protocol, HostName: hostName, Port: port, stop: make(chan struct{}), timeout: time.Duration(10000) * time.Millisecond}
+	g.Localize(language.AmericanEnglish)
 	g.received = *newGXSynchronousMediaBase()
 	return g
 }
@@ -332,8 +338,7 @@ func (g *GXNet) Open() error {
 		return nil
 	}
 	g.statef(false, gxcommon.MediaStateOpening)
-	g.tracef(false, gxcommon.TraceTypesInfo, "%s connecting to %s", g.Protocol.String(), fmt.Sprintf("%s:%d timeout %d ms", g.HostName, g.Port, g.timeout.Milliseconds()))
-
+	g.trace(false, gxcommon.TraceTypesInfo, g.p.Sprintf("msg.connecting_to", g.Protocol.String(), g.HostName, g.Port, g.timeout.Milliseconds()))
 	var p string
 	if g.Protocol == NetworkTypeTCP {
 		if g.UseIPv6 {
@@ -350,7 +355,7 @@ func (g *GXNet) Open() error {
 	}
 	c, err := net.DialTimeout(p, g.HostName+":"+strconv.Itoa(g.Port), g.timeout)
 	if err != nil {
-		g.tracef(false, gxcommon.TraceTypesError, "connect to %s failed: %v", fmt.Sprintf("%s:%d", g.HostName, g.Port), err)
+		g.trace(false, gxcommon.TraceTypesError, g.p.Sprintf("msg.connect_failed", g.HostName, g.Port, err))
 		g.errorf(false, err)
 		return err
 	}
@@ -358,7 +363,7 @@ func (g *GXNet) Open() error {
 	g.wg.Add(1)
 	go g.reader()
 
-	g.tracef(false, gxcommon.TraceTypesInfo, "connected to %s", fmt.Sprintf("%s:%d", g.HostName, g.Port))
+	g.trace(false, gxcommon.TraceTypesInfo, g.p.Sprintf("msg.connected_to", g.HostName, g.Port))
 	g.statef(false, gxcommon.MediaStateOpen)
 	return nil
 }
@@ -393,7 +398,7 @@ func (g *GXNet) Send(data any, receiver string) error {
 // Receive implements IGXMedia
 func (g *GXNet) Receive(args *gxcommon.ReceiveParameters) (bool, error) {
 	if args.EOP == nil && args.Count == 0 && !args.AllData {
-		return false, errors.New("either Count or EOP must be set")
+		return false, errors.New(g.p.Sprintf("msg.count_or_eop"))
 	}
 	terminator, err := gxcommon.ToBytes(args.EOP, binary.BigEndian)
 	if err != nil {
@@ -459,7 +464,7 @@ func (g *GXNet) reader() {
 				return
 			}
 			if (g.stop) != nil {
-				g.tracef(false, gxcommon.TraceTypesError, "Connection failed: %v", err)
+				g.trace(false, gxcommon.TraceTypesError, g.p.Sprintf("msg.connection_failed", err))
 				g.errorf(false, err)
 			}
 			return
@@ -514,10 +519,30 @@ func (g *GXNet) tracef(lock bool, traceType gxcommon.TraceTypes, fmtStr string, 
 		cb = g.onTrace
 		g.mu.RUnlock()
 	} else {
+		trace = !(int(g.traceLevel) < int(traceType))
 		cb = g.onTrace
 	}
 	if cb != nil && trace {
 		p := gxcommon.NewTraceEventArgs(traceType, fmt.Sprintf(fmtStr, a...), "")
+		var m gxcommon.IGXMedia = g
+		cb(m, *p)
+	}
+}
+
+func (g *GXNet) trace(lock bool, traceType gxcommon.TraceTypes, message string) {
+	var cb gxcommon.TraceEventHandler
+	trace := false
+	if lock {
+		g.mu.RLock()
+		trace = !(int(g.traceLevel) < int(traceType))
+		cb = g.onTrace
+		g.mu.RUnlock()
+	} else {
+		trace = !(int(g.traceLevel) < int(traceType))
+		cb = g.onTrace
+	}
+	if cb != nil && trace {
+		p := gxcommon.NewTraceEventArgs(traceType, message, "")
 		var m gxcommon.IGXMedia = g
 		cb(m, *p)
 	}
@@ -556,7 +581,7 @@ func (g *GXNet) Close() error {
 		// already closed
 	default:
 		if g.conn != nil {
-			g.tracef(false, gxcommon.TraceTypesInfo, "Closing connection to %s", fmt.Sprintf("%s:%d", g.HostName, g.Port))
+			g.trace(false, gxcommon.TraceTypesInfo, g.p.Sprintf("msg.closing_connection", g.HostName, g.Port))
 			g.statef(false, gxcommon.MediaStateClosing)
 		}
 		close(g.stop)
@@ -567,9 +592,72 @@ func (g *GXNet) Close() error {
 		_ = g.conn.SetReadDeadline(time.Now())
 		err = g.conn.Close()
 		g.conn = nil
-		g.tracef(false, gxcommon.TraceTypesInfo, "Connection closed to %s", fmt.Sprintf("%s:%d", g.HostName, g.Port))
+		g.trace(false, gxcommon.TraceTypesInfo, g.p.Sprintf("msg.connection_closed", g.HostName, g.Port))
 		g.statef(false, gxcommon.MediaStateClosed)
 	}
 	g.wg.Wait()
 	return err
+}
+
+//nolint:errcheck
+func init() {
+	// --- English (default) ---
+	message.SetString(language.AmericanEnglish, "msg.closing_connection", "Closing connection to %s:%d")
+	message.SetString(language.AmericanEnglish, "msg.connection_closed", "Connection closed to %s:%d")
+	message.SetString(language.AmericanEnglish, "msg.connection_failed", "Connection failed: %v")
+	message.SetString(language.AmericanEnglish, "msg.count_or_eop", "Either Count or EOP must be set")
+	message.SetString(language.AmericanEnglish, "msg.connected_to", "Connected to %s:%d")
+	message.SetString(language.AmericanEnglish, "msg.connect_failed", "connect to %s:%d failed: %v")
+	message.SetString(language.AmericanEnglish, "msg.connecting_to", "%s connecting to %s:%d timeout %d ms")
+
+	// --- German (de) ---
+	message.SetString(language.German, "msg.closing_connection", "Verbindung zu %s:%d wird geschlossen")
+	message.SetString(language.German, "msg.connection_closed", "Verbindung zu %s:%d wurde geschlossen")
+	message.SetString(language.German, "msg.connection_failed", "Verbindung fehlgeschlagen: %v")
+	message.SetString(language.German, "msg.count_or_eop", "Entweder Count oder EOP muss gesetzt sein")
+	message.SetString(language.German, "msg.connected_to", "Verbunden mit %s:%d")
+	message.SetString(language.German, "msg.connect_failed", "Verbindung zu %s:%d fehlgeschlagen: %v")
+	message.SetString(language.German, "msg.connecting_to", "%s verbindet sich mit %s:%d timeout %d ms")
+
+	// --- Finnish (fi) ---
+	message.SetString(language.Finnish, "msg.closing_connection", "Suljetaan yhteys kohteeseen %s:%d")
+	message.SetString(language.Finnish, "msg.connection_closed", "Yhteys suljettu kohteeseen %s:%d")
+	message.SetString(language.Finnish, "msg.connection_failed", "Yhteyden muodostus epäonnistui: %v")
+	message.SetString(language.Finnish, "msg.count_or_eop", "Joko Count tai EOP on asetettava")
+	message.SetString(language.Finnish, "msg.connected_to", "Yhdistetty kohteeseen %s:%d")
+	message.SetString(language.Finnish, "msg.connect_failed", "Yhteyden muodostus kohteeseen %s:%d epäonnistui: %v")
+	message.SetString(language.Finnish, "msg.connecting_to", "%s yhdistetään kohteeseen %s:%d timeout %d ms")
+
+	// --- Swedish (sv) ---
+	message.SetString(language.Swedish, "msg.closing_connection", "Stänger anslutning till %s:%d")
+	message.SetString(language.Swedish, "msg.connection_closed", "Anslutning stängd till %s:%d")
+	message.SetString(language.Swedish, "msg.connection_failed", "Anslutningen misslyckades: %v")
+	message.SetString(language.Swedish, "msg.count_or_eop", "Antingen Count eller EOP måste anges")
+	message.SetString(language.Swedish, "msg.connected_to", "Ansluten till %s:%d")
+	message.SetString(language.Swedish, "msg.connect_failed", "Anslutning till %s:%d misslyckades: %v")
+	message.SetString(language.Swedish, "msg.connecting_to", "%s ansluter till %s:%d timeout %d ms")
+
+	// --- Spanish (es) ---
+	message.SetString(language.Spanish, "msg.closing_connection", "Cerrando conexión con %s:%d")
+	message.SetString(language.Spanish, "msg.connection_closed", "Conexión cerrada con %s:%d")
+	message.SetString(language.Spanish, "msg.connection_failed", "Error de conexión: %v")
+	message.SetString(language.Spanish, "msg.count_or_eop", "Se debe establecer Count o EOP")
+	message.SetString(language.Spanish, "msg.connected_to", "Conectado a %s:%d")
+	message.SetString(language.Spanish, "msg.connect_failed", "Error al conectar con %s:%d: %v")
+	message.SetString(language.Spanish, "msg.connecting_to", "%s conectando a %s:%d timeout %d ms")
+
+	// --- Estonian (et) ---
+	message.SetString(language.Estonian, "msg.closing_connection", "Suletakse ühendus sihtkohta %s:%d")
+	message.SetString(language.Estonian, "msg.connection_closed", "Ühendus suleti sihtkohta %s:%d")
+	message.SetString(language.Estonian, "msg.connection_failed", "Ühendus ebaõnnestus: %v")
+	message.SetString(language.Estonian, "msg.count_or_eop", "Count või EOP peab olema määratud")
+	message.SetString(language.Estonian, "msg.connected_to", "Ühendatud sihtkohta %s:%d")
+	message.SetString(language.Estonian, "msg.connect_failed", "Ühendamine sihtkohta %s:%d ebaõnnestus: %v")
+	message.SetString(language.Estonian, "msg.connecting_to", "%s ühendatakse sihtkohta %s:%d timeout %d ms")
+}
+
+// Localize messages for the specified language.
+// No errors is returned if language is not supported.
+func (g *GXNet) Localize(language language.Tag) {
+	g.p = message.NewPrinter(language)
 }

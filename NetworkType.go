@@ -50,7 +50,7 @@ const (
 	NetworkTypeTCP
 )
 
-// Parse converts the given string into a NetworkType value.
+// NetworkTypeParse converts the given string into a NetworkType value.
 //
 // It returns the corresponding NetworkType constant if the string matches
 // a known level name, or an error if the input is invalid.
