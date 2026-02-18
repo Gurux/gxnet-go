@@ -8,4 +8,4 @@ require golang.org/x/text v0.34.0
 
 replace github.com/Gurux/gxnet-go => ../
 
-go 1.25.2
+go 1.25.5
