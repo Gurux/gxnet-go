@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/Gurux/gxcommon-go"
 	"github.com/Gurux/gxnet-go"
@@ -19,19 +18,6 @@ var (
 	w       = flag.Int("w", 1000, "WaitTime in milliseconds.")
 	lang    = flag.String("lang", "", "Used language.")
 )
-
-func CurrentLanguage() language.Tag {
-	langEnv := os.Getenv("LANG")
-	if langEnv == "" {
-		return language.AmericanEnglish
-	}
-	langEnv = strings.Split(langEnv, ".")[0]
-	tag, err := language.Parse(langEnv)
-	if err != nil {
-		return language.AmericanEnglish
-	}
-	return tag
-}
 
 func main() {
 	flag.Parse()
