@@ -1,10 +1,10 @@
 module github.com/Gurux/gxnet-example-go
 
-require github.com/Gurux/gxcommon-go v1.0.4
+require github.com/Gurux/gxcommon-go v1.0.6
 
-require github.com/Gurux/gxnet-go v1.0.2
+require github.com/Gurux/gxnet-go v1.0.4
 
-require golang.org/x/text v0.30.0
+require golang.org/x/text v0.34.0
 
 replace github.com/Gurux/gxnet-go => ../
 
