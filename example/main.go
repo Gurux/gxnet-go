@@ -25,16 +25,19 @@ func main() {
 		flag.PrintDefaults()
 		return
 	}
-
-	media := gxnet.NewGXNet(gxnet.NetworkTypeTCP, *host, *port)
+	//Used language.
 	if *lang != "" {
 		tag, err := language.Parse(*lang)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "error parsing language:", err)
 			return
 		}
-		media.Localize(tag)
+		gxcommon.SetLanguage(tag)
+	} else {
+		gxcommon.SetLanguage(gxcommon.CurrentLanguage())
 	}
+
+	media := gxnet.NewGXNet(gxnet.NetworkTypeTCP, *host, *port)
 
 	media.SetOnError(func(m gxcommon.IGXMedia, err error) {
 		// log/handle error
@@ -70,9 +73,6 @@ func main() {
 			fmt.Fprintln(os.Stderr, "error:", err)
 			return
 		}
-	}
-	if *t == "" {
-		fmt.Printf("Trace level, %s!\n", *t)
 	}
 	fmt.Printf("Host name: %s\n", *host)
 	fmt.Printf("Host port: %d\n", *port)

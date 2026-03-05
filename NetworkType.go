@@ -40,20 +40,19 @@ import (
 	"github.com/Gurux/gxcommon-go"
 )
 
-// NetworkType determines which network protocol is used for data transfer.
+// NetworkType identifies which transport protocol GXNet uses.
 type NetworkType int
 
 const (
-	// NetworkTypeUDP defines that UDP protocol is used.
+	// NetworkTypeUDP selects UDP datagram transport.
 	NetworkTypeUDP NetworkType = iota
-	// NetworkTypeTCP defines that the TCP/IP protocol is used.
+	// NetworkTypeTCP selects TCP stream transport.
 	NetworkTypeTCP
 )
 
-// NetworkTypeParse converts the given string into a NetworkType value.
+// NetworkTypeParse parses a protocol name into a NetworkType value.
 //
-// It returns the corresponding NetworkType constant if the string matches
-// a known level name, or an error if the input is invalid.
+// Accepted values are "TCP" and "UDP" (case-insensitive).
 func NetworkTypeParse(value string) (NetworkType, error) {
 	var ret NetworkType
 	var err error
