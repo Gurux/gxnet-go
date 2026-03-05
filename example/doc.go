@@ -1,3 +1,8 @@
+// Package main contains a small command-line example demonstrating the
+// use of the gxnet library. It shows how to configure a network media,
+// register callbacks, enable tracing, and perform synchronous/asynchronous
+// send/receive operations.
+
 package main
 
 // --------------------------------------------------------------------------

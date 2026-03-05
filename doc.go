@@ -1,7 +1,12 @@
-// Package gxnet provides TCP/UDP based media for Gurux components.
+// Package gxnet provides TCP/UDP-based media for Gurux components.
 // It implements the common IGXMedia-style contract: open/close a connection,
 // send/receive data (optionally framed by an EOP marker), and emit events for
 // received data, errors, tracing and state changes.
+//
+// The transport is fully concurrent-safe, supports optional end-of-packet
+// (EOP) framing, adjustable timeouts, and event callbacks that allow the
+// caller to handle data and state changes asynchronously. Synchronous
+// receive mode is also provided for callers that prefer a blocking API.
 //
 // Features
 //
@@ -15,27 +20,28 @@
 // # Construction
 //
 // Use NewGXNet to create a connection with protocol, host and port. Additional
-// options (such as timeout, EOP, tracing) can be configured through setters.
+// options (such as timeouts, EOP, tracing, IPv6, etc.) can be configured
+// through setter methods before calling Open.
 //
-// Example
+// The following example demonstrates basic usage:
 //
-//	n := gxnet.NewGXNet(gxnet.TCP, "127.0.0.1", 4059)
-//	n.SetTimeout(5_000) // 5000 ms; or use time.Duration setters if exposed
+//	enm := gxnet.NewGXNet(gxnet.NetworkTypeTCP, "127.0.0.1", 4059)
+//	enm.SetTimeout(5000) // milliseconds
 //
-//	n.SetOnReceived(func(m IGXMedia, e ReceiveEventArgs) {
-//	    // handle e.Data(), e.SenderInfo()
+//	enm.SetOnReceived(func(m IGXMedia, e ReceiveEventArgs) {
+//		// handle incoming data
 //	})
-//	n.SetOnError(func(m IGXMedia, err error) {
-//	    // log/handle error
+//	enm.SetOnError(func(m IGXMedia, err error) {
+//		// handle errors
 //	})
 //
-//	if err := n.Open(); err != nil {
-//	    // handle connect error
+//	if err := enm.Open(); err != nil {
+//		// handle connect error
 //	}
-//	defer n.Close()
+//	defer enm.Close()
 //
 //	// send bytes; receive happens via the callback or via a blocking Receive.
-//	_, _ = n.Send([]byte{0x01, 0x02, 0x03})
+//	_, _ = enm.Send([]byte{0x01, 0x02, 0x03})
 //
 // # EOP framing
 //
@@ -55,6 +61,10 @@
 // Long-running work in event handlers should be offloaded to a separate
 // goroutine to avoid blocking I/O paths.
 package gxnet
+
+import (
+	"github.com/Gurux/gxcommon-go"
+)
 
 // --------------------------------------------------------------------------
 //
@@ -88,3 +98,21 @@ package gxnet
 // This code is licensed under the GNU General Public License v2.
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 // ---------------------------------------------------------------------------
+
+// ExampleNewGXNet demonstrates a minimal client that opens a connection,
+// sends a few bytes, and then closes the media. The example is suitable for
+// inclusion in godoc output and can be run with `go test`.
+func ExampleNewGXNet() {
+	m := NewGXNet(NetworkTypeTCP, "127.0.0.1", 4059)
+	m.SetTimeout(5000)
+	m.SetOnError(func(gxcommon.IGXMedia, error) {})
+	m.SetOnReceived(func(gxcommon.IGXMedia, gxcommon.ReceiveEventArgs) {})
+	if err := m.Open(); err != nil {
+		return
+	}
+	defer m.Close()
+	if err := m.Send([]byte("hello"), ""); err != nil {
+		return
+	}
+	// Output:
+}

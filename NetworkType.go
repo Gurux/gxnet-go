@@ -52,7 +52,9 @@ const (
 
 // NetworkTypeParse parses a protocol name into a NetworkType value.
 //
-// Accepted values are "TCP" and "UDP" (case-insensitive).
+// Accepted values are "TCP" and "UDP" (case-insensitive). If the string
+// does not match one of those names an error wrapping gxcommon.ErrUnknownEnum
+// is returned.
 func NetworkTypeParse(value string) (NetworkType, error) {
 	var ret NetworkType
 	var err error
@@ -65,6 +67,17 @@ func NetworkTypeParse(value string) (NetworkType, error) {
 		err = fmt.Errorf("%w: %q", gxcommon.ErrUnknownEnum, value)
 	}
 	return ret, err
+}
+
+// ExampleNetworkTypeParse demonstrates parsing valid and invalid values.
+func ExampleNetworkTypeParse() {
+	if _, err := NetworkTypeParse("tcp"); err != nil {
+		return
+	}
+	if _, err := NetworkTypeParse("bogus"); err == nil {
+		return
+	}
+	// Output:
 }
 
 // String returns the canonical name of the network type.

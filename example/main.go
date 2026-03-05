@@ -19,6 +19,10 @@ var (
 	lang    = flag.String("lang", "", "Used language.")
 )
 
+// main parses command‑line arguments, configures a GXNet media instance,
+// establishes a connection, sends a message and optionally waits for a
+// response. It is not used by library consumers but serves as a runnable
+// example in the repository.
 func main() {
 	flag.Parse()
 	if *host == "" || *port == 0 || *message == "" {
