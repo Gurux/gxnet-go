@@ -1,6 +1,6 @@
 module github.com/Gurux/gxnet-go
 
-require github.com/Gurux/gxcommon-go v1.0.15
+require github.com/Gurux/gxcommon-go v1.0.16
 
 require golang.org/x/text v0.34.0
 

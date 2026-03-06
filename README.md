@@ -4,7 +4,7 @@ Join the Gurux Community or follow [@Gurux](https://twitter.com/guruxorg "@Gurux
 
 With gurux.net component you can send data easily syncronously or asyncronously using TCP or UDP connection.
 
-Open Source gxnet media component, made by Gurux Ltd, is a part of GXMedias set of media components, which programming interfaces help you implement communication by chosen connection type. 
+Open Source `gxnet` media component, made by Gurux Ltd, is a part of GXMedias set of media components, which programming interfaces help you implement communication by chosen connection type. 
 For more info check out [Gurux](http://www.gurux.org/ "Gurux").
 
 We are updating documentation on Gurux web page. 
@@ -13,12 +13,19 @@ If you have problems you can ask your questions in Gurux [Forum](http://www.guru
 
 You can get source codes from http://www.github.com/gurux or add reference to your project:
 
+For complete API documentation refer to the GoDoc site
+(https://pkg.go.dev/github.com/Gurux/gxnet-go) or browse the example in the
+`example/` subdirectory.
+
+Installation
+============
+
 ```go
 go get github.com/Gurux/gxcommon-go
 go get github.com/Gurux/gxnet-go
 ```
 
-Simple example
+Quick start
 =========================== 
 Before use you must set following settings:
 * HostName

@@ -60,10 +60,10 @@ func newGXSynchronousMediaBase() *synchronousMediaBase {
 	return &synchronousMediaBase{wait: make(chan struct{})}
 }
 
-// Append appends bytes to the buffer and notifies any waiting callers.
+// append appends bytes to the buffer and notifies any waiting callers.
 // It is safe for concurrent use by the reader goroutine and the
 // synchronous Receive logic.
-func (b *synchronousMediaBase) Append(p []byte) {
+func (b *synchronousMediaBase) append(p []byte) {
 	if len(p) == 0 {
 		return
 	}
@@ -75,11 +75,11 @@ func (b *synchronousMediaBase) Append(p []byte) {
 	close(old)
 }
 
-// Get removes and returns up to count bytes from the buffer. A count of -1
+// get removes and returns up to count bytes from the buffer. A count of -1
 // or a value equal to the current buffer length means "return everything."
 // The returned slice is a copy of the buffered data; the underlying buffer
 // is adjusted accordingly.
-func (b *synchronousMediaBase) Get(count int) []byte {
+func (b *synchronousMediaBase) get(count int) []byte {
 	var ret []byte
 	b.mu.Lock()
 	if count == -1 || count == len(b.buf) {
@@ -96,13 +96,13 @@ func (b *synchronousMediaBase) Get(count int) []byte {
 	return ret
 }
 
-// Search scans the buffered data for the first occurrence of pattern. It
+// search scans the buffered data for the first occurrence of pattern. It
 // returns the index right after the match (useful for slicing). The method
 // will wait until the pattern is found, the buffer length reaches minLen, or
 // maxWait elapses. A non‑positive maxWait value indicates no waiting should
 // occur. A return value of -1 indicates the conditions weren't met before
 // timing out.
-func (b *synchronousMediaBase) Search(pattern []byte, minLen int, maxWait time.Duration) int {
+func (b *synchronousMediaBase) search(pattern []byte, minLen int, maxWait time.Duration) int {
 	if minLen < 0 {
 		minLen = 0
 	}

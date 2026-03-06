@@ -62,10 +62,6 @@
 // goroutine to avoid blocking I/O paths.
 package gxnet
 
-import (
-	"github.com/Gurux/gxcommon-go"
-)
-
 // --------------------------------------------------------------------------
 //
 //	Gurux Ltd
@@ -99,20 +95,41 @@ import (
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 // ---------------------------------------------------------------------------
 
+import (
+	"fmt"
+	"os"
+
+	"github.com/Gurux/gxcommon-go"
+)
+
 // ExampleNewGXNet demonstrates a minimal client that opens a connection,
 // sends a few bytes, and then closes the media. The example is suitable for
 // inclusion in godoc output and can be run with `go test`.
 func ExampleNewGXNet() {
-	m := NewGXNet(NetworkTypeTCP, "127.0.0.1", 4059)
-	m.SetTimeout(5000)
-	m.SetOnError(func(gxcommon.IGXMedia, error) {})
-	m.SetOnReceived(func(gxcommon.IGXMedia, gxcommon.ReceiveEventArgs) {})
-	if err := m.Open(); err != nil {
+	media := NewGXNet(NetworkTypeTCP, "127.0.0.1", 4059)
+	err := media.SetTimeout(5000)
+	if err != nil {
 		return
 	}
-	defer m.Close()
-	if err := m.Send([]byte("hello"), ""); err != nil {
+	media.SetOnError(func(m gxcommon.IGXMedia, err error) {
+		// log/handle error
+		fmt.Fprintln(os.Stderr, "error:", err)
+	})
+
+	media.SetOnReceived(func(m gxcommon.IGXMedia, e gxcommon.ReceiveEventArgs) {
+		fmt.Printf("Async data: %s\n", e.String())
+	})
+	if err := media.Open(); err != nil {
 		return
 	}
-	// Output:
+	//Close the connection.
+	defer func() {
+		if err := media.Close(); err != nil {
+			fmt.Fprintln(os.Stderr, "close failed:", err)
+		}
+	}()
+	//Data is send asynchronously. Receive happens via SetOnReceived callback.
+	if err := media.Send([]byte("hello"), ""); err != nil {
+		return
+	}
 }

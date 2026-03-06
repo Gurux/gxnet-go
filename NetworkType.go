@@ -80,7 +80,7 @@ func ExampleNetworkTypeParse() {
 	// Output:
 }
 
-// String returns the canonical name of the network type.
+// String returns the name of the network type.
 // It satisfies fmt.Stringer.
 func (g NetworkType) String() string {
 	var ret string
