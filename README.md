@@ -21,7 +21,6 @@ Installation
 ============
 
 ```go
-go get github.com/Gurux/gxcommon-go
 go get github.com/Gurux/gxnet-go
 ```
 
